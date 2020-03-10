@@ -14,49 +14,63 @@
 #include "Vec2D.h"
 #include "color.h"
 #include "AARectangle.h"
+#include "Definitions.h"
 
 class Screen;
+class Board;
 
-const int TILE_SIZE = 10;
-const int NUM_BLOCKS_PIECE = 4;
-
-enum TetrominosType {
-    O_TYPE = 0,
-    I_TYPE,
-    T_TYPE,
-    J_TYPE,
-    L_TYPE,
-    S_TYPE,
-    Z_TYPE,
-    NUM_TYPES
+enum PieceDirection
+{
+    LEFT = 1 << 0,
+    RIGHT = 1 << 1
 };
 
-const Vec2D INITIAL_POSITION_TETROMINOS[7][4] = {
-    {Vec2D(0.0f, -TILE_SIZE), Vec2D(0.0f, 0.0f), Vec2D(TILE_SIZE, -TILE_SIZE), Vec2D(TILE_SIZE, 0.0f)},
-    {Vec2D(-TILE_SIZE, 0.0f), Vec2D(0.0f, 0.0f), Vec2D(TILE_SIZE, 0.0f), Vec2D(2*TILE_SIZE, 0.0f)},
-    {Vec2D(0.0f, TILE_SIZE), Vec2D(0.0f, 0.0f), Vec2D(-TILE_SIZE, 0), Vec2D(TILE_SIZE, 0)},
-    {Vec2D(0.0f, -TILE_SIZE), Vec2D(0.0f, 0.0f), Vec2D(TILE_SIZE, 0), Vec2D(2*TILE_SIZE, 0)},
-    {Vec2D(0.0f, TILE_SIZE), Vec2D(0.0f, 0.0f), Vec2D(TILE_SIZE, 0), Vec2D(2*TILE_SIZE, 0)},
-    {Vec2D(-TILE_SIZE, 0.0f), Vec2D(0.0f, 0.0f), Vec2D(0.0f, -TILE_SIZE), Vec2D(TILE_SIZE, -TILE_SIZE)},
-    {Vec2D(-TILE_SIZE, 0.0f), Vec2D(0.0f, 0.0f), Vec2D(0.0f, TILE_SIZE), Vec2D(TILE_SIZE, TILE_SIZE)}
-};
+const float SPEED_SCALAR = 1.0f;
+static const float MOVE_KEY_RATE = 0.1f;
 
 class Piece {
 public:
     Piece();
-    void Init(TetrominosType type, const Color& outlineColor, const Color& fillColor);
-    void Update(uint32_t dt);
-    void Draw(Screen& screen);
-    void Rotate();
+    void Init(TetrominosType type, const AARectangle& boundary, const Color& outlineColor, const Color& fillColor);
+    void Update(uint32_t dt, Board& board);
+    void Draw(Screen& screen, bool debug = false);
+    void Rotate(Board& board);
     void MoveTo(const Vec2D& position);
+    void MovePieceDirection(const Vec2D& direction, const float velocity = SPEED_SCALAR);
+    void ConfirmMovement();
+    void UndoMovement();
+    
+    bool CheckIfMovementIsAllowed(Board& boardmGameOver);
+    
+    //inline AARectangle* GetBlocks() const { return mBlocks; }
+    
+    inline bool IsMovingLeft() const { return mDirection == PieceDirection::LEFT; }
+    inline bool IsMovingRight() const { return mDirection == PieceDirection::RIGHT; }
+    
+    inline void SetMovementDirection(PieceDirection dr) { mDirection |= dr; }
+    inline void UnsetMovementDirection(PieceDirection dr) { mDirection &= ~dr; }
+    inline void StopMovement() { mDirection = 0; }
     
     inline const Color& GetOutlineColor() const { return mOutlineColor; }
     inline const Color& GetFillColor() const { return mFillColor; }
+    
+    inline const TetrominosType GetType() const { return mType; }
+    
+    void CreateNewPiece(TetrominosType newType = TetrominosType::NUM_TYPES, bool hasPosition = false, const Vec2D& startPosition = Vec2D::Zero);
+    
+    AARectangle mBlocks[NUM_BLOCKS_PIECE];
+    AARectangle mBlocksMovementAux[NUM_BLOCKS_PIECE];
 private:
+    uint32_t mDirection;
     Color mOutlineColor;
     Color mFillColor;
     TetrominosType mType;
-    std::vector<AARectangle> mBlocks;
+    
+    AARectangle mBoundary;
+    float mTimer;
+    float mWaitTime;
+    float mKeyTimer;
+    
 };
 
 #endif /* Piece_h */

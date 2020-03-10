@@ -11,9 +11,8 @@
 
 #include "Game.h"
 #include "Piece.h"
-
-const int BOARD_WIDTH = 10;
-const int BOARD_HEIGHT = 20;
+#include "Board.h"
+#include "NextPiece.h"
 
 class TetrisGame : public Game {
 
@@ -22,8 +21,19 @@ public:
     virtual void Update(uint32_t dt) override;
     virtual void Draw(Screen& screen) override;
     virtual const std::string& GetName() const override;
+    void ResetGame();
 private:
+    
+    void MoveDownFaster();
     Piece mPiece;
+    Board mBoard;
+    NextPiece mNextPiece;
+    
+    bool mGameOver;
+    float mTimer;
+    float mWaitTime;
+    
+    const float INITIAL_WAIT_TIME = 0.5f;
 };
 
 #endif /* TetrisGame_h */
