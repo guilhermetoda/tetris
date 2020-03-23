@@ -17,7 +17,7 @@ Piece::Piece() {
 
 
 void Piece::Init(TetrominosType type, const AARectangle& boundary, const Color& outlineColor, const Color& fillColor) {
-    mType = type;
+    //mType = type;
     mOutlineColor = outlineColor;
     mFillColor = fillColor;
     mDirection = 0;
@@ -26,7 +26,6 @@ void Piece::Init(TetrominosType type, const AARectangle& boundary, const Color& 
     mKeyTimer = 0;
     mBoundary = boundary;
     CreateNewPiece();
-    std::cout<<"Piece Init" << std::endl;
 }
 
 void Piece::Update(uint32_t dt, Board& board)
@@ -89,6 +88,7 @@ bool Piece::CheckIfMovementIsAllowed(Board& board)
     }
     
     ConfirmMovement();
+    board.MoveGhostPiece(*this);
     return isAllowed;
     
 }
@@ -111,10 +111,6 @@ void Piece::Draw(Screen& screen, bool debug)
     for (int i = 0; i < NUM_BLOCKS_PIECE; ++i)
     {
         screen.Draw(mBlocks[i], mOutlineColor, true, mFillColor);
-        if (debug) {
-            //std::cout << "CADE??";
-            //std::cout << mBlocks[i].GetTopLeftPoint();
-        }
     }
 }
 
@@ -168,4 +164,19 @@ void Piece::CreateNewPiece(TetrominosType newType, bool hasPosition, const Vec2D
 
 void Piece::MoveTo(const Vec2D& position) {
     
+}
+
+const int Piece::GetLowestBlock() const
+{
+    float lowestPositionY = 0.0f;
+    int lowestBlock = 0;
+    for (int i = 0; i < NUM_BLOCKS_PIECE; ++i)
+    {
+        if (mBlocks[i].GetTopLeftPoint().GetY() > lowestPositionY) {
+            lowestPositionY = mBlocks[i].GetTopLeftPoint().GetY();
+            lowestBlock = i;
+        }
+    }
+    
+    return lowestBlock;
 }

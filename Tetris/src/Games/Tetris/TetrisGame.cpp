@@ -13,7 +13,8 @@
 #include <iostream>
 
 void TetrisGame::Init(GameController& controller) {
-
+    //srand(time(NULL));
+    
     controller.ClearAll();
     
     ButtonAction rotateAction;
@@ -21,7 +22,6 @@ void TetrisGame::Init(GameController& controller) {
     rotateAction.action = [this](uint32_t dt, InputState state) {
         if (GameController::IsPressed(state))
         {
-            std::cout << "Era pra rodar";
             mPiece.Rotate(mBoard);
             
         }
@@ -136,6 +136,7 @@ void TetrisGame::ResetGame()
    
     Vec2D nextPieceBoardPosition = { gameBoundary.GetBottomRightPoint().GetX() + TILE_SIZE, gameBoundary.GetTopLeftPoint().GetY() + TILE_SIZE };
     mNextPiece.Init(nextPieceBoardPosition, TILE_SIZE * 6, TILE_SIZE * 4);
+    mNextPiece.GenerateNextPiece();
     
     mBoard.Init(BOARD_WIDTH, BOARD_HEIGHT, gameBoundary);
     mPiece.Init(type, gameBoundary, Color::White(), Color::Red());

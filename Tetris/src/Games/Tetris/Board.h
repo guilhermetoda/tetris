@@ -12,6 +12,7 @@
 #include "color.h"
 #include "AARectangle.h"
 #include "Definitions.h"
+#include <vector>
 
 class Piece;
 class Screen;
@@ -19,11 +20,20 @@ class Screen;
 static const int BOARD_WIDTH = 10;
 static const int BOARD_HEIGHT = 20;
 
+//static const Color GHOST_COLOR = Color::Green();
+
 struct BoardBlock
 {
     bool empty = true;
+    bool isGhost = false;
     AARectangle rect;
     Color color = Color::LightGrey();
+};
+
+struct GhostBlockPosition
+{
+    int xPosition;
+    int yPosition;
 };
 
 class Board
@@ -45,8 +55,16 @@ public:
     
     bool CheckGameOver(const Piece& piece) const;
     
-private:
+    bool CheckAndRemovesGhostPiece(int y, int x);
     
+    bool HasBlockAbove(int row, int pieceRow, int column);
+    
+    void MoveGhostPiece(const Piece& piece);
+    void ClearGhostVector();
+    void SetGhostVector();
+    
+private:
+    std::vector<GhostBlockPosition> mGhostVector;
     BoardBlock mBlocksOnBoard[BOARD_HEIGHT][BOARD_WIDTH];
     AARectangle mBoundary;
     int mWidth;
@@ -57,12 +75,14 @@ private:
     float mOffsetBoardY;
     
     Color mBackgroundColor;
+    Color mGhostPieceColor;
     bool isGameOver;
     
     bool GetBoardPositionFromBlock(const AARectangle& block, int& r, int& c);
     void DeleteRow(int row);
     void CheckRows();
     void SetEmptyBlocksOnBoard();
+    int GetFirstEmptyRow(int row,int column, int maxRow = BOARD_HEIGHT);
     
 };
 

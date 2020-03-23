@@ -41,6 +41,7 @@ public:
     void UndoMovement();
     
     bool CheckIfMovementIsAllowed(Board& boardmGameOver);
+    const int GetLowestBlock() const;
     
     //inline AARectangle* GetBlocks() const { return mBlocks; }
     

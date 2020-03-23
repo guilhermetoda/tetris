@@ -26,7 +26,6 @@ void NextPiece::Draw(Screen& screen)
 void NextPiece::GenerateNextPiece()
 {
     Vec2D position = { mBox.GetTopLeftPoint().GetX() + 2*TILE_SIZE, mBox.GetTopLeftPoint().GetY() + TILE_SIZE};
-    std::cout << position;
     UpdateNextPiece(mNextPiece.GetType());
     mNextPiece.CreateNewPiece(TetrominosType::NUM_TYPES, true, position);
     hasNextPiece = true;
