@@ -27,7 +27,7 @@ struct BoardBlock
     bool empty = true;
     bool isGhost = false;
     AARectangle rect;
-    Color color = Color::LightGrey();
+    Color color = {40,40,40,255};
 };
 
 struct GhostBlockPosition

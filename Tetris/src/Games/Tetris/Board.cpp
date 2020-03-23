@@ -99,7 +99,7 @@ void Board::SetEmptyBlocksOnBoard()
         {
             Vec2D rectPosition = { mOffsetBoardX + j*TILE_SIZE, i * TILE_SIZE + mOffsetBoardY  };
             AARectangle rect = { rectPosition , TILE_SIZE, TILE_SIZE };
-            BoardBlock emptyBoardBlock = { true, false, rect ,Color::LightGrey() };
+            BoardBlock emptyBoardBlock = { true, false, rect , Color::LightGrey()};
             mBlocksOnBoard[i][j] = emptyBoardBlock;
         }
     }
@@ -114,7 +114,7 @@ void Board::StorePiece(Piece& piece, uint32_t dt)
         if (GetBoardPositionFromBlock(piece.mBlocks[i], row, column))  {
             mBlocksOnBoard[row][column].empty = false;
             mBlocksOnBoard[row][column].isGhost = false;
-            mBlocksOnBoard[row][column].color = Color::Red();
+            mBlocksOnBoard[row][column].color = piece.GetFillColor();
         }
         else {
             SetGameOver();

@@ -11,10 +11,39 @@
 #include "Board.h"
 #include <iostream>
 
-Piece::Piece() {
+Piece::Piece()
+{
     
 }
 
+const Color Piece::GetColorFromPiece()
+{
+    switch (mType) {
+        case O_TYPE:
+            return {245, 245, 0, 255};
+            break;
+        case I_TYPE:
+            return {0, 255, 255, 255};
+            break;
+        case T_TYPE:
+            return {128, 0, 128, 255};
+            break;
+        case J_TYPE:
+            return Color::Blue();
+            break;
+        case L_TYPE:
+            return {255, 165, 0, 255};
+            break;
+        case S_TYPE:
+            return { 0, 128, 0, 255};
+            break;
+        case Z_TYPE:
+            return Color::Red();
+            break;
+        default:
+            return Color::White();
+    }
+}
 
 void Piece::Init(TetrominosType type, const AARectangle& boundary, const Color& outlineColor, const Color& fillColor) {
     //mType = type;
@@ -138,9 +167,11 @@ void Piece::CreateNewPiece(TetrominosType newType, bool hasPosition, const Vec2D
     {
         TetrominosType type = static_cast<TetrominosType>(rand() % TetrominosType::NUM_TYPES);
         mType = type;
+        mFillColor = GetColorFromPiece();
     }
     else {
         mType = newType;
+        mFillColor = GetColorFromPiece();
     }
     
     Vec2D gameStartPosition;

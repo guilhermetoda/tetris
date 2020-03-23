@@ -61,7 +61,11 @@ public:
     
     AARectangle mBlocks[NUM_BLOCKS_PIECE];
     AARectangle mBlocksMovementAux[NUM_BLOCKS_PIECE];
+    
 private:
+    
+    const Color GetColorFromPiece();
+    
     uint32_t mDirection;
     Color mOutlineColor;
     Color mFillColor;
