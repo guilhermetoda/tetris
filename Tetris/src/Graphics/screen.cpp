@@ -11,26 +11,47 @@
 #include "Triangle.h"
 #include "AARectangle.h"
 #include "Circle.h"
+#include "BMPImage.h"
+#include "BitmapFont.h"
+#include "SpriteSheet.h"
 #include "../Utils/Vec2D.h"
 #include <cassert>
 #include <cmath>
 #include <SDL.h>
 #include <algorithm>
 
-Screen::Screen(): mWidth(0), mHeight(0), mptrWindow(nullptr), noptrWindowSurface(nullptr)
+Screen::Screen(): mWidth(0), mHeight(0), mptrWindow(nullptr), noptrWindowSurface(nullptr), mRenderer(nullptr), mPixelFormat(nullptr), mTexture(nullptr)
 {
     
 }
 Screen::~Screen()
 {
+    if (mPixelFormat)
+    {
+        SDL_FreeFormat(mPixelFormat);
+        mPixelFormat = nullptr;
+    }
+    if (mRenderer)
+    {
+        SDL_DestroyRenderer(mRenderer);
+        mRenderer = nullptr;
+    }
+    if (mTexture)
+    {
+        SDL_DestroyTexture(mTexture);
+        mTexture = nullptr;
+    }
+    
+    
     if (mptrWindow) {
         SDL_DestroyWindow(mptrWindow);
         mptrWindow =nullptr;
     }
     SDL_Quit();
 }
-SDL_Window* Screen::Init(uint32_t width, uint32_t height, uint32_t mag)
+SDL_Window* Screen::Init(uint32_t width, uint32_t height, uint32_t mag, bool fast)
 {
+    mFast = fast;
     if (SDL_Init(SDL_INIT_VIDEO))
     {
         std::cout << "Error SDL_INIT" << std::endl;
@@ -44,11 +65,34 @@ SDL_Window* Screen::Init(uint32_t width, uint32_t height, uint32_t mag)
 
     if (mptrWindow)
     {
-        noptrWindowSurface = SDL_GetWindowSurface(mptrWindow);
-        SDL_PixelFormat* pixelFormat = noptrWindowSurface->format;
-        Color::InitColorFormat(pixelFormat);
-        mClearColor = Color::Black();
-        mBackBuffer.Init(pixelFormat->format, mWidth, mHeight);
+        uint8_t rClear = 0;
+        uint8_t gClear = 0;
+        uint8_t bClear = 0;
+        uint8_t aClear = 255;
+        
+        if (mFast)
+        {
+            mRenderer = SDL_CreateRenderer(mptrWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+            if (mRenderer == nullptr)
+            {
+                std::cout << "SDL Renderer failed" << std::endl;
+                return nullptr;
+            }
+            SDL_SetRenderDrawColor(mRenderer, rClear, gClear, bClear, aClear);
+        }
+        else
+        {
+            noptrWindowSurface = SDL_GetWindowSurface(mptrWindow);
+        }
+        
+        mPixelFormat = SDL_AllocFormat(SDL_GetWindowPixelFormat(mptrWindow));
+        if (mFast)
+        {
+            mTexture = SDL_CreateTexture(mRenderer, mPixelFormat->format, SDL_TEXTUREACCESS_STREAMING, width, height);
+        }
+        Color::InitColorFormat(mPixelFormat);
+        mClearColor = Color(rClear, gClear, bClear, aClear);
+        mBackBuffer.Init(mPixelFormat->format, mWidth, mHeight);
         mBackBuffer.Clear(mClearColor);
     }
     return mptrWindow;
@@ -59,9 +103,25 @@ void Screen::SwapScreen() {
     if (mptrWindow)
     {
         ClearScreen();
-        //SDL_BlitSurface(mBackBuffer.GetSurface(), nullptr, noptrWindowSurface, nullptr);
-        SDL_BlitScaled(mBackBuffer.GetSurface(), nullptr, noptrWindowSurface, nullptr);
-        SDL_UpdateWindowSurface(mptrWindow);
+        if (mFast)
+        {
+            uint8_t* textureData = nullptr;
+            int texturePitch = 0;
+            if (SDL_LockTexture(mTexture, nullptr, (void**)&textureData, &texturePitch) >= 0)
+            {
+                SDL_Surface* surface = mBackBuffer.GetSurface();
+                memcpy(textureData, surface->pixels, surface->w * surface->h * mPixelFormat->BytesPerPixel);
+                SDL_UnlockTexture(mTexture);
+                SDL_RenderCopy(mRenderer, mTexture, nullptr, nullptr);
+                SDL_RenderPresent(mRenderer);
+            }
+        }
+        else
+        {
+            SDL_BlitScaled(mBackBuffer.GetSurface(), nullptr, noptrWindowSurface, nullptr);
+            SDL_UpdateWindowSurface(mptrWindow);
+        }
+        
         mBackBuffer.Clear(mClearColor);
     }
 }
@@ -150,7 +210,7 @@ void Screen::Draw(const Triangle& triangle, const Color& color, bool fill, const
     
     if (fill)
     {
-        FillPolly(triangle.GetPoints(), fillColor);
+        FillPolly(triangle.GetPoints(), [fillColor](uint32_t x, uint32_t y){ return fillColor; });
     }
         
 }
@@ -170,7 +230,7 @@ void Screen::Draw(const AARectangle& rect, const Color& color, bool fill, const 
     
     if (fill)
     {
-        FillPolly(rect.GetPoints(), fillColor);
+        FillPolly(rect.GetPoints(), [fillColor](uint32_t x, uint32_t y){ return fillColor; });
     }
 }
 
@@ -199,7 +259,7 @@ void Screen::Draw(const Circle& circle, const Color& color, bool fill, const Col
     
     if (fill)
     {
-        FillPolly(circlePoints, fillColor);
+        FillPolly(circlePoints, [fillColor](uint32_t x, uint32_t y){ return fillColor; });
     }
     
     for (const Line2D& line: lines)
@@ -209,16 +269,89 @@ void Screen::Draw(const Circle& circle, const Color& color, bool fill, const Col
     
 }
 
+void Screen::Draw(const BMPImage& image, const Sprite& sprite, const Vec2D& position, const Color& overlayColor)
+{
+    float rVal = static_cast<float>(overlayColor.GetRed()) / 255.0f;
+    float gVal = static_cast<float>(overlayColor.GetGreen()) / 255.0f;
+    float bVal = static_cast<float>(overlayColor.GetBlue()) / 255.0f;
+    float aVal = static_cast<float>(overlayColor.GetAlpha()) / 255.0f;
+    
+    uint32_t width = sprite.width;
+    uint32_t height = sprite.height;
+    
+    const std::vector<Color>& pixels = image.GetPixels();
+    auto topLeft = position;
+    auto topRight = position + Vec2D(width, 0);
+    auto bottomLeft = position + Vec2D(0, height);
+    auto bottomRight = position + Vec2D(width, height);
+    
+    std::vector<Vec2D> points = { topLeft, bottomLeft , bottomRight, topRight};
+    Vec2D xAxis = topRight - topLeft;
+    Vec2D yAxis = bottomLeft - topLeft;
+    
+    const float invXAxisLengthSq = 1.0f / xAxis.Mag2();
+    const float invYAxisLengthSq = 1.0f / yAxis.Mag2();
+    
+    FillPolly(points, [&](uint32_t px, uint32_t py){
+        Vec2D p = {static_cast<float>(px), static_cast<float>(py)};
+        Vec2D d = p - topLeft;
+        float u = invXAxisLengthSq * d.Dot(xAxis);
+        float v = invYAxisLengthSq * d.Dot(yAxis);
+        u = Clamp(u, 0.0f, 1.0f);
+        v = Clamp(v, 0.0f, 1.0f);
+        
+        float tx = roundf(u * static_cast<float>(sprite.width));
+        float ty = roundf(v * static_cast<float>(sprite.height));
+        
+        Color imageColor = pixels[GetIndex(image.GetWidth(), ty + sprite.yPos, tx + sprite.xPos)];
+        Color newColor = { static_cast<uint8_t>(imageColor.GetRed() * rVal), static_cast<uint8_t>(imageColor.GetGreen() * gVal), static_cast<uint8_t>(imageColor.GetBlue() * bVal), static_cast<uint8_t>(imageColor.GetAlpha() * aVal) };
+        
+        return newColor;
+        
+    });
+}
+
+void Screen::Draw(const SpriteSheet& spriteSheet, const std::string& spriteName, const Vec2D& position, const Color& overlayColor)
+{
+    Draw(spriteSheet.GetImage(), spriteSheet.GetSprite(spriteName), position, overlayColor);
+}
+
+void Screen::Draw(const BitmapFont& font, const std::string& text, const Vec2D& position, const Color& overlayColor)
+{
+    uint32_t xPosition = position.GetX();
+    
+    const SpriteSheet& spriteSheet = font.GetSpriteSheet();
+    for (char c : text)
+    {
+        if (c == ' ')
+        {
+            xPosition += font.GetFontSpacingBetweenWords();
+            continue;
+        }
+        Sprite sprite =  spriteSheet.GetSprite(std::string("") + c);
+        Draw(spriteSheet.GetImage(), sprite, Vec2D(xPosition, position.GetY()), overlayColor);
+        xPosition += sprite.width;
+        xPosition += font.GetFontSpacingBetweenLetters();
+    }
+}
+
 void Screen::ClearScreen()
 {
     assert(mptrWindow);
     if (mptrWindow)
     {
-        SDL_FillRect(noptrWindowSurface, nullptr, mClearColor.GetPixelColor());
+        if (mFast)
+        {
+            SDL_RenderClear(mRenderer);
+        }
+        else
+        {
+            SDL_FillRect(noptrWindowSurface, nullptr, mClearColor.GetPixelColor());
+        }
     }
 }
 
-void Screen::FillPolly(const std::vector<Vec2D>& points, const Color& color)
+void Screen::FillPolly(const std::vector<Vec2D>& points, FillPollyFunc func)
 {
     if (points.size() > 0)
     {
@@ -290,7 +423,7 @@ void Screen::FillPolly(const std::vector<Vec2D>& points, const Color& color)
                     //Draw(line, color);
                     for (int pixelX = nodeXVec[k]; pixelX < nodeXVec[k+1]; ++pixelX)
                     {
-                        Draw(pixelX, pixelY, color);
+                        Draw(pixelX, pixelY, func(pixelX, pixelY));
                     }
                 }
             }

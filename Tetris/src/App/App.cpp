@@ -25,14 +25,21 @@ App& App::Singleton()
 }
 bool App::Init(uint32_t width, uint32_t height, uint32_t mag)
 {
+    
+    if (!mFont.Load("ArcadeFont"))
+    {
+        std::cout << "Couldn't load the font" << std::endl;
+        return false;
+    }
+    
     mnoptrWindow = mScreen.Init(width, height, mag);
     
     std::unique_ptr<ArcadeScene> arcadeScene = std::make_unique<ArcadeScene>();
     PushScene(std::move(arcadeScene));
     
-    std::unique_ptr<TetrisGame> tetrisGame = std::make_unique<TetrisGame>();
+    /*std::unique_ptr<TetrisGame> tetrisGame = std::make_unique<TetrisGame>();
     std::unique_ptr<GameScene> tetrisScene = std::make_unique<GameScene>(std::move(tetrisGame));
-    PushScene(std::move(tetrisScene));
+    PushScene(std::move(tetrisScene));*/
     
     return mnoptrWindow != nullptr;
 }
