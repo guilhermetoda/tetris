@@ -45,10 +45,8 @@ const Color Piece::GetColorFromPiece()
     }
 }
 
-void Piece::Init(TetrominosType type, const AARectangle& boundary, const Color& outlineColor, const Color& fillColor) {
-    //mType = type;
+void Piece::Init(const AARectangle& boundary, const Color& outlineColor) {
     mOutlineColor = outlineColor;
-    mFillColor = fillColor;
     mDirection = 0;
     mTimer = 0;
     mWaitTime = 1;

@@ -13,6 +13,7 @@
 #include "Piece.h"
 #include "Board.h"
 #include "NextPiece.h"
+#include "TextBox.h"
 
 class TetrisGame : public Game {
 
@@ -28,6 +29,7 @@ private:
     Piece mPiece;
     Board mBoard;
     NextPiece mNextPiece;
+    TextBox mTextBox;
     
     bool mGameOver;
     float mTimer;

@@ -31,7 +31,7 @@ static const float MOVE_KEY_RATE = 0.1f;
 class Piece {
 public:
     Piece();
-    void Init(TetrominosType type, const AARectangle& boundary, const Color& outlineColor, const Color& fillColor);
+    void Init(const AARectangle& boundary, const Color& outlineColor);
     void Update(uint32_t dt, Board& board);
     void Draw(Screen& screen, bool debug = false);
     void Rotate(Board& board);

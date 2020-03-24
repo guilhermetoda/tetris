@@ -15,6 +15,7 @@
 #include "color.h"
 #include "GameController.h"
 #include <iostream>
+#include "App.h"
 
 ArcadeScene::ArcadeScene()
 {
@@ -57,14 +58,12 @@ void ArcadeScene::Update(uint32_t dt)
 
 void ArcadeScene::Draw(Screen& screen)
 {
-    Triangle tri = { Vec2D(0,0), Vec2D(100,200), Vec2D(0,200) };
-    AARectangle rect = { Vec2D(screen.GetWidth()/2 - 25,screen.GetHeight()/2 - 25), 50, 50};
-    Circle circle = { Vec2D(screen.GetWidth()/2+50, screen.GetHeight()/2 + 50), 50};
+    const BitmapFont& font = App::Singleton().GetFont();
+    AARectangle rect = { Vec2D::Zero, App::Singleton().Width(), App::Singleton().Height() };
     
-    tri.MoveTo(Vec2D(screen.GetWidth() / 2.0f, screen.GetHeight() / 2.0f));
-    screen.Draw(tri, Color::Green(), true, Color::Green());
-    screen.Draw(rect, Color::Blue(), true, Color::Blue());
-    screen.Draw(circle, Color(0,255, 0, 150), true, Color(0,255, 0, 150));
+    Vec2D textPosition;
+    textPosition = font.GetDrawPosition(GetSceneName(), rect, BFXA_CENTER, BFYA_CENTER);
+    screen.Draw(font, GetSceneName(), textPosition, Color::Red());
 }
 const std::string& ArcadeScene::GetSceneName() const
 {

@@ -11,10 +11,11 @@
 #include "App.h"
 #include "Definitions.h"
 #include <iostream>
+#include "Score.h"
 
 void TetrisGame::Init(GameController& controller) {
     //srand(time(NULL));
-    
+
     controller.ClearAll();
     
     ButtonAction rotateAction;
@@ -114,6 +115,7 @@ void TetrisGame::Draw(Screen& screen) {
     mBoard.Draw(screen);
     mPiece.Draw(screen);
     mNextPiece.Draw(screen);
+    mTextBox.Draw(screen);
     
 }
 
@@ -124,6 +126,7 @@ const std::string& TetrisGame::GetName() const {
 
 void TetrisGame::ResetGame()
 {
+    Score::ResetScore();
     float endBoard = BOARD_HEIGHT * TILE_SIZE;
     float widthBoundary = BOARD_WIDTH * TILE_SIZE;
     
@@ -132,12 +135,15 @@ void TetrisGame::ResetGame()
     
     Vec2D initialPosition = { 0.0f , App::Singleton().Height() - endBoard};
     AARectangle gameBoundary = { initialPosition, (uint32_t)widthBoundary, (uint32_t)endBoard };
-    TetrominosType type = TetrominosType::T_TYPE;
    
-    Vec2D nextPieceBoardPosition = { gameBoundary.GetBottomRightPoint().GetX() + TILE_SIZE, gameBoundary.GetTopLeftPoint().GetY() + TILE_SIZE };
+    int nextPieceOffsetYPos = 100;
+    Vec2D nextPieceBoardPosition = { gameBoundary.GetBottomRightPoint().GetX() + TILE_SIZE, gameBoundary.GetTopLeftPoint().GetY() + nextPieceOffsetYPos };
     mNextPiece.Init(nextPieceBoardPosition, TILE_SIZE * 6, TILE_SIZE * 4);
     mNextPiece.GenerateNextPiece();
     
     mBoard.Init(BOARD_WIDTH, BOARD_HEIGHT, gameBoundary);
-    mPiece.Init(type, gameBoundary, Color::White(), Color::Red());
+    mPiece.Init(gameBoundary, Color::White());
+    Vec2D textBoxInitialPosition = { widthBoundary, 0.0f };
+    AARectangle textBoxBoundaries = { textBoxInitialPosition, App::Singleton().Width() - (uint32_t)widthBoundary, App::Singleton().Height() };
+    mTextBox.Init(textBoxBoundaries);
 }

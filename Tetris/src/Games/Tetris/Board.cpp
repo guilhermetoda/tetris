@@ -12,6 +12,7 @@
 #include "screen.h"
 #include "Piece.h"
 #include <iostream>
+#include "Score.h"
 
 void Board::Init(const int width, const int height, const AARectangle& boundary)
 {
@@ -151,6 +152,7 @@ void Board::DeleteRow(int row)
 
 void Board::CheckRows()
 {
+    int rowsDeleted = 0;
     for (int i = 0; i < BOARD_HEIGHT; ++i) {
         int j = 0;
         while (j < BOARD_WIDTH) {
@@ -163,8 +165,10 @@ void Board::CheckRows()
         if (j == BOARD_WIDTH)
         {
             DeleteRow(i);
+            ++rowsDeleted;
         }
     }
+    Score::CheckAndIncreaseScore(rowsDeleted);
 }
 
 void Board::MoveGhostPiece(const Piece& piece)

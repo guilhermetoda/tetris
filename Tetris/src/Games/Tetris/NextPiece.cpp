@@ -34,5 +34,5 @@ void NextPiece::GenerateNextPiece()
 void NextPiece::UpdateNextPiece(TetrominosType newType)
 {
     AARectangle boundary = {};
-    mNextPiece.Init(newType, boundary, Color::White(), Color::Red());
+    mNextPiece.Init(boundary, Color::White());
 }
