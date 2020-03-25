@@ -15,10 +15,12 @@
 #include "NextPiece.h"
 #include "TextBox.h"
 #include "HighScores.h"
+#include "ArcadePlayerName.h"
 
 enum GameState {
     PLAYING = 0,
     GAME_OVER,
+    TYPING
 };
 
 class TetrisGame : public Game {
@@ -33,6 +35,7 @@ private:
     
     void MoveDownFaster();
     void CheckIfHighScore();
+    void ConfirmNewHighScore();
     
     Piece mPiece;
     Board mBoard;
@@ -41,6 +44,10 @@ private:
     HighScores mHighScores;
     
     GameState mGameState;
+    ArcadePlayerName mArcadePlayerName;
+    
+    int mArcadePlayerNameCurrentIndex;
+    
     
     bool mGameOver;
     float mTimer;

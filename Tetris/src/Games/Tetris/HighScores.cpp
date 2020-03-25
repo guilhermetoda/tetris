@@ -104,6 +104,7 @@ bool HighScores::LoadFile()
     if(!mFile.good()) {
         return false;
     }
+    ReOrderRanking();
     return true;
 }
 

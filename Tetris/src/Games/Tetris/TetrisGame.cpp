@@ -19,7 +19,7 @@ void TetrisGame::Init(GameController& controller) {
     controller.ClearAll();
     
     ButtonAction rotateAction;
-    rotateAction.key = GameController::UpKey();
+    rotateAction.key = GameController::ActionKey();
     rotateAction.action = [this](uint32_t dt, InputState state) {
         if (GameController::IsPressed(state))
         {
@@ -41,12 +41,27 @@ void TetrisGame::Init(GameController& controller) {
     ButtonAction leftKeyAction;
     leftKeyAction.key = GameController::LeftKey();
     leftKeyAction.action = [this](uint32_t dt, InputState state){
-        if (GameController::IsPressed(state)) {
-            mPiece.SetMovementDirection(PieceDirection::LEFT);
+        if (mGameState == PLAYING) {
+            if (GameController::IsPressed(state)) {
+                mPiece.SetMovementDirection(PieceDirection::LEFT);
+            }
+            else
+            {
+                mPiece.UnsetMovementDirection(PieceDirection::LEFT);
+            }
         }
-        else
+        else if (mGameState == TYPING)
         {
-            mPiece.UnsetMovementDirection(PieceDirection::LEFT);
+            if (GameController::IsPressed(state)) {
+                if (mArcadePlayerNameCurrentIndex <= 0)
+                {
+                    mArcadePlayerNameCurrentIndex = 0;
+                }
+                else
+                {
+                    --mArcadePlayerNameCurrentIndex;
+                }
+            }
         }
     };
     controller.AddInputActionForKey(leftKeyAction);
@@ -54,12 +69,24 @@ void TetrisGame::Init(GameController& controller) {
     ButtonAction rightKeyAction;
     rightKeyAction.key = GameController::RightKey();
     rightKeyAction.action = [this](uint32_t dt, InputState state){
-        if (GameController::IsPressed(state)) {
-            mPiece.SetMovementDirection(PieceDirection::RIGHT);
+        if (mGameState == PLAYING) {
+            if (GameController::IsPressed(state)) {
+                mPiece.SetMovementDirection(PieceDirection::RIGHT);
+            }
+            else
+            {
+                mPiece.UnsetMovementDirection(PieceDirection::RIGHT);
+            }
         }
-        else
+        else if (mGameState == TYPING)
         {
-            mPiece.UnsetMovementDirection(PieceDirection::RIGHT);
+            if (GameController::IsPressed(state)) {
+                mArcadePlayerNameCurrentIndex++;
+                if (mArcadePlayerNameCurrentIndex >= 3)
+                {
+                    ConfirmNewHighScore();
+                }
+            }
         }
     };
     controller.AddInputActionForKey(rightKeyAction);
@@ -68,12 +95,20 @@ void TetrisGame::Init(GameController& controller) {
     ButtonAction downKeyAction;
     rightKeyAction.key = GameController::DownKey();
     rightKeyAction.action = [this](uint32_t dt, InputState state){
-        if (GameController::IsPressed(state)) {
-            MoveDownFaster();
+        if (mGameState == PLAYING) {
+            if (GameController::IsPressed(state)) {
+                MoveDownFaster();
+            }
+            else
+            {
+                mWaitTime = INITIAL_WAIT_TIME;
+            }
         }
-        else
+        else if (mGameState == TYPING)
         {
-            mWaitTime = INITIAL_WAIT_TIME;
+            if (GameController::IsPressed(state)) {
+                mArcadePlayerName.ChangeLetter(mArcadePlayerNameCurrentIndex);
+            }
         }
     };
     controller.AddInputActionForKey(rightKeyAction);
@@ -87,8 +122,21 @@ void TetrisGame::Init(GameController& controller) {
     };
     controller.AddInputActionForKey(backAction);
     
+    //Adding the action for the down arrow
+    ButtonAction upKeyAction;
+    upKeyAction.key = GameController::UpKey();
+    upKeyAction.action = [this](uint32_t dt, InputState state){
+        
+        if (GameController::IsPressed(state) && mGameState == TYPING)
+        {
+            mArcadePlayerName.ChangeLetter(mArcadePlayerNameCurrentIndex, -1);
+        }
+    };
+    controller.AddInputActionForKey(upKeyAction);
+    
     //mBoard.Init(BOARD_WIDTH, BOARD_HEIGHT, 10);
     mHighScores.Init(App::Singleton().GetBasePath() + "Assets/HighScores.dat");
+    mArcadePlayerName.Init("AAA");
     ResetGame();
 }
 
@@ -147,6 +195,36 @@ void TetrisGame::Draw(Screen& screen) {
         textPosition.SetX(textPosition.GetX() + 10);
         screen.Draw(font, gameOverText, textPosition, Color::Red());
     }
+    
+    if (mGameState == TYPING)
+    {
+        const BitmapFont& font = App::Singleton().GetFont();
+        AARectangle rect = { Vec2D::Zero, App::Singleton().Width(), App::Singleton().Height()};
+        Vec2D textPosition;
+        std::string gameOverText = "NEW RECORD! ";
+              
+        textPosition = font.GetDrawPosition(gameOverText, rect, BFXA_LEFT, BFYA_TOP);
+        textPosition.SetY(textPosition.GetY() + 5);
+        textPosition.SetX(textPosition.GetX() + 10);
+        screen.Draw(font, gameOverText, textPosition, Color::Red());
+        
+        for (size_t i = 0; i < mArcadePlayerName.GetPlayerName().size(); ++i)
+        {
+            std::string currentLetter = std::string("") + mArcadePlayerName.GetPlayerName()[i];
+            textPosition = font.GetDrawPosition(currentLetter, rect, BFXA_LEFT, BFYA_TOP);
+            textPosition.SetY(textPosition.GetY() + 15);
+            textPosition.SetX(textPosition.GetX() + 10 * i);
+            if (i == mArcadePlayerNameCurrentIndex)
+            {
+                screen.Draw(font, currentLetter, textPosition, Color::White());
+            }
+            else
+            {
+                screen.Draw(font, currentLetter, textPosition, Color::Green());
+            }
+        }
+    }
+    
     mBoard.Draw(screen);
     mPiece.Draw(screen);
     mNextPiece.Draw(screen);
@@ -185,7 +263,22 @@ void TetrisGame::ResetGame()
 
 void TetrisGame::CheckIfHighScore()
 {
-    PlayerScore newScore = { Score::points, "ABC" };
-    mHighScores.AddPlayerScore(newScore);
-    mHighScores.PrintScores();
+    
+    if (mHighScores.GetLastScore().score < Score::points)
+    {
+        mArcadePlayerNameCurrentIndex = 0;
+        mGameState = TYPING;
+    }
+    
+    
+}
+
+void TetrisGame::ConfirmNewHighScore()
+{
+    PlayerScore newScore = { Score::points, mArcadePlayerName.GetPlayerName() };
+    if (mHighScores.AddPlayerScore(newScore))
+    {
+    
+    }
+    mGameState = GAME_OVER;
 }

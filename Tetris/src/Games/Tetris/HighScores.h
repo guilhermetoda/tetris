@@ -37,7 +37,7 @@ private:
     bool LoadFile();
     
     
-    static const size_t mTopRankingSize = 2;
+    static const size_t mTopRankingSize = 20;
     std::vector<PlayerScore> mScores;
     std::string mFileName;
     
