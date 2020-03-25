@@ -13,6 +13,7 @@
 #include "GameScene.h"
 #include <vector>
 #include "TetrisGame.h"
+#include "HighScoreScene.h"
 
 MainMenuScene::MainMenuScene():ButtonScene({"Play Game", "High Score", "Quit Game"}, Color::Blue())
 {
@@ -85,7 +86,8 @@ std::unique_ptr<Scene> MainMenuScene::GetScene(eScenes scene)
         break;
         case HIGHSCORE:
         {
-                
+            std::unique_ptr<Scene> highScoreScene = std::make_unique<HighScoreScene>();
+            return highScoreScene;
         }
         break;
         case QUIT:

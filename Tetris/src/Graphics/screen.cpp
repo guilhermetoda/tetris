@@ -282,7 +282,7 @@ void Screen::Draw(const BMPImage& image, const Sprite& sprite, const Vec2D& posi
     const std::vector<Color>& pixels = image.GetPixels();
     auto topLeft = position;
     auto topRight = position + Vec2D(width, 0);
-    auto bottomLeft = position + Vec2D(0, height);
+    auto bottomLeft = position + Vec2D(0,height);
     auto bottomRight = position + Vec2D(width, height);
     
     std::vector<Vec2D> points = { topLeft, bottomLeft , bottomRight, topRight};

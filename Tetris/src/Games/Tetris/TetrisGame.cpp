@@ -19,11 +19,19 @@ void TetrisGame::Init(GameController& controller) {
     controller.ClearAll();
     
     ButtonAction rotateAction;
-    rotateAction.key = GameController::ActionKey();
+    rotateAction.key = GameController::UpKey();
     rotateAction.action = [this](uint32_t dt, InputState state) {
         if (GameController::IsPressed(state))
         {
-            mPiece.Rotate(mBoard);
+            if (mGameState == GAME_OVER)
+            {
+                mGameState = PLAYING;
+                ResetGame();
+            }
+            else if (mGameState == PLAYING)
+            {
+                mPiece.Rotate(mBoard);
+            }
             
         }
     };
@@ -80,38 +88,44 @@ void TetrisGame::Init(GameController& controller) {
     controller.AddInputActionForKey(backAction);
     
     //mBoard.Init(BOARD_WIDTH, BOARD_HEIGHT, 10);
+    mHighScores.Init(App::Singleton().GetBasePath() + "Assets/HighScores.dat");
     ResetGame();
 }
 
 void TetrisGame::Update(uint32_t dt)
 {
-    mPiece.Update(dt, mBoard);
-    if (mTimer > mWaitTime) {
-        mPiece.MovePieceDirection(DOWN_DIR, SPEED_SCALAR * MsToSec(dt));
-        if (!mPiece.CheckIfMovementIsAllowed(mBoard)) {
-            // If movement is not allowed, store piece in the board
-            // Generates a new piece
-            if (!mBoard.IsGameOver()) {
-                mBoard.StorePiece(mPiece, dt);
-                if (mNextPiece.hasNextPiece) {
-                    mPiece.CreateNewPiece(mNextPiece.GetNextPiece().GetType());
-                    mNextPiece.GenerateNextPiece();
+    if (mGameState == PLAYING)
+    {
+        mPiece.Update(dt, mBoard);
+        if (mTimer > mWaitTime) {
+            mPiece.MovePieceDirection(DOWN_DIR, SPEED_SCALAR * MsToSec(dt));
+            if (!mPiece.CheckIfMovementIsAllowed(mBoard)) {
+                // If movement is not allowed, store piece in the board
+                // Generates a new piece
+                if (!mBoard.IsGameOver()) {
+                    mBoard.StorePiece(mPiece, dt);
+                    if (mNextPiece.hasNextPiece) {
+                        mPiece.CreateNewPiece(mNextPiece.GetNextPiece().GetType());
+                        mNextPiece.GenerateNextPiece();
+                    }
+                    else {
+                        mNextPiece.GenerateNextPiece();
+                        mPiece.CreateNewPiece();
+                    }
                 }
                 else {
-                    mNextPiece.GenerateNextPiece();
-                    mPiece.CreateNewPiece();
+                    // Game Over
+                    mGameState = GAME_OVER;
+                    CheckIfHighScore();
+                    //ResetGame();
                 }
+                
             }
-            else {
-                // Game Over
-                ResetGame();
-            }
-            
+            mTimer = 0;
         }
-        mTimer = 0;
-    }
-    else {
-        mTimer += MsToSec(dt);
+        else {
+            mTimer += MsToSec(dt);
+        }
     }
 }
 
@@ -121,6 +135,18 @@ void TetrisGame::MoveDownFaster()
 }
 
 void TetrisGame::Draw(Screen& screen) {
+    if (mGameState == GAME_OVER)
+    {
+        const BitmapFont& font = App::Singleton().GetFont();
+        AARectangle rect = { Vec2D::Zero, App::Singleton().Width(), App::Singleton().Height()};
+        Vec2D textPosition;
+        std::string gameOverText = "Game Over";
+              
+        textPosition = font.GetDrawPosition(gameOverText, rect, BFXA_LEFT, BFYA_TOP);
+        textPosition.SetY(textPosition.GetY() + 5);
+        textPosition.SetX(textPosition.GetX() + 10);
+        screen.Draw(font, gameOverText, textPosition, Color::Red());
+    }
     mBoard.Draw(screen);
     mPiece.Draw(screen);
     mNextPiece.Draw(screen);
@@ -155,4 +181,11 @@ void TetrisGame::ResetGame()
     Vec2D textBoxInitialPosition = { widthBoundary, 0.0f };
     AARectangle textBoxBoundaries = { textBoxInitialPosition, App::Singleton().Width() - (uint32_t)widthBoundary, App::Singleton().Height() };
     mTextBox.Init(textBoxBoundaries);
+}
+
+void TetrisGame::CheckIfHighScore()
+{
+    PlayerScore newScore = { Score::points, "ABC" };
+    mHighScores.AddPlayerScore(newScore);
+    mHighScores.PrintScores();
 }
