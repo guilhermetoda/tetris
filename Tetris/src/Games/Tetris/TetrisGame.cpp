@@ -70,6 +70,15 @@ void TetrisGame::Init(GameController& controller) {
     };
     controller.AddInputActionForKey(rightKeyAction);
     
+    ButtonAction backAction;
+    backAction.key = GameController::CancelKey();
+    backAction.action = [this](uint32_t dt, InputState state){
+        if (GameController::IsPressed(state)) {
+            App::Singleton().PopScene();
+        }
+    };
+    controller.AddInputActionForKey(backAction);
+    
     //mBoard.Init(BOARD_WIDTH, BOARD_HEIGHT, 10);
     ResetGame();
 }
